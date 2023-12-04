@@ -1,4 +1,4 @@
-use std::collections::{HashSet, LinkedList};
+use std::collections::{HashSet, VecDeque};
 
 fn parse_numbers(s: &str) -> HashSet<u32> {
     s.trim()
@@ -7,7 +7,7 @@ fn parse_numbers(s: &str) -> HashSet<u32> {
         .collect::<HashSet<_>>()
 }
 
-fn add_card(stack: &mut LinkedList<usize>, wins: usize, amount_this_card: usize) {
+fn add_card(stack: &mut VecDeque<usize>, wins: usize, amount_this_card: usize) {
     if stack.len() < wins {
         stack.extend(vec![1; wins - stack.len()]);
     }
@@ -20,7 +20,7 @@ fn add_card(stack: &mut LinkedList<usize>, wins: usize, amount_this_card: usize)
 }
 
 fn challenge2(input: &str) -> usize {
-    let mut winning_stack = LinkedList::new();
+    let mut winning_stack = VecDeque::new();
     input
         .trim()
         .lines()
@@ -44,10 +44,10 @@ fn challenge1(input: &str) -> u32 {
         .map(|mut s| {
             let winning_numbers = parse_numbers(s.next().unwrap());
             let elves_numbers = parse_numbers(s.next().unwrap());
-            winning_numbers.intersection(&elves_numbers).count() as u32
+            winning_numbers.intersection(&elves_numbers).count()
         })
         .filter(|s| *s > 0)
-        .map(|s| 2_u32.pow(s - 1))
+        .map(|s| 1 << (s - 1))
         .sum()
 }
 
