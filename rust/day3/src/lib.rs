@@ -1,13 +1,9 @@
-use std::{
-    char,
-    fmt::Debug,
-    ops::{Index, IndexMut},
-    str::FromStr,
-    thread::panicking,
-};
+use std::{fmt::Debug, str::FromStr};
+
+use aoc_traits::AdventOfCodeDay;
 
 #[derive(Debug)]
-struct Board {
+pub struct Board {
     field: Vec<Vec<i32>>,
 }
 
@@ -141,13 +137,32 @@ impl FromStr for Board {
     }
 }
 
+#[cfg(test)]
 fn day3(input: &str) -> (i32, i32) {
     let board = Board::from_str(input).unwrap();
     (board.compute_sum(), board.compute_engine_sum())
 }
 
-fn main() {
-    day3("input");
+pub struct Day3Solver;
+
+impl<'a> AdventOfCodeDay<'a> for Day3Solver {
+    type ParsedInput = Board;
+
+    type Part1Output = i32;
+
+    type Part2Output = i32;
+
+    fn solve_part1(input: &Self::ParsedInput) -> Self::Part1Output {
+        input.compute_sum()
+    }
+
+    fn solve_part2(input: &Self::ParsedInput) -> Self::Part2Output {
+        input.compute_engine_sum()
+    }
+
+    fn parse_input(input: &'a str) -> Self::ParsedInput {
+        Board::from_str(input).unwrap()
+    }
 }
 
 #[test]

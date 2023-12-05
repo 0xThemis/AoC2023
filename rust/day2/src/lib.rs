@@ -1,5 +1,7 @@
 use std::{collections::HashMap, str::Chars};
 
+use aoc_traits::AdventOfCodeDay;
+
 #[derive(Debug)]
 struct Config(HashMap<Colors, u32>);
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -168,11 +170,26 @@ fn example_1(s: &str, config: Config) -> u32 {
         .sum()
 }
 
-fn main() {
-    println!("Hello, world!");
+pub struct Day2Solver;
 
-    example_1("", Config::new(12, 12, 12));
-    example_2("");
+impl<'a> AdventOfCodeDay<'a> for Day2Solver {
+    type ParsedInput = &'a str;
+
+    type Part1Output = u32;
+
+    type Part2Output = u32;
+
+    fn solve_part1(input: &Self::ParsedInput) -> Self::Part1Output {
+        example_1(input, Config::new(12, 13, 14))
+    }
+
+    fn solve_part2(input: &Self::ParsedInput) -> Self::Part2Output {
+        example_2(input)
+    }
+
+    fn parse_input(input: &'a str) -> Self::ParsedInput {
+        input
+    }
 }
 
 #[test]
