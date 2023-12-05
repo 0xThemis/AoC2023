@@ -1,3 +1,5 @@
+use aoc_traits::AdventOfCodeDay;
+
 fn parse_number_1(s: &str) -> u128 {
     let asciis = s
         .to_owned()
@@ -38,6 +40,28 @@ fn day1_challenge1(s: &str) -> u128 {
 
 fn day1_challenge2(s: &str) -> u128 {
     s.trim().to_owned().lines().map(parse_number_2).sum()
+}
+
+pub struct Day1Solver;
+
+impl<'a> AdventOfCodeDay<'a> for Day1Solver {
+    type ParsedInput = &'a str;
+
+    type Part1Output = u128;
+
+    type Part2Output = u128;
+
+    fn solve_part1(input: &Self::ParsedInput) -> Self::Part1Output {
+        day1_challenge1(input)
+    }
+
+    fn solve_part2(input: &Self::ParsedInput) -> Self::Part2Output {
+        day1_challenge2(input)
+    }
+
+    fn parse_input(input: &'a str) -> Self::ParsedInput {
+        input
+    }
 }
 
 #[test]

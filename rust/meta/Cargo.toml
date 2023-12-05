@@ -1,0 +1,15 @@
+[package]
+name = "meta"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aoc-traits = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+color-eyre = { version = "0.6" }
+day1 = { path = "../day1" }
+day2 = { path = "../day2" }
+day3 = { path = "../day3" }
+day4 = { path = "../day4" }
