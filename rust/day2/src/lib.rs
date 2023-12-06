@@ -21,7 +21,7 @@ impl Default for Config {
     }
 }
 impl Config {
-    fn new(blue: u32, red: u32, green: u32) -> Self {
+    fn new(red: u32, blue: u32, green: u32) -> Self {
         let mut map = HashMap::new();
         map.insert(Colors::Blue, blue);
         map.insert(Colors::Red, red);
@@ -50,7 +50,6 @@ impl Config {
     }
 
     fn check(&self, other: Self) -> bool {
-        println!("comparing {self:?} with {other:?}");
         let mut result = self.0.get(&Colors::Blue).unwrap() >= other.0.get(&Colors::Blue).unwrap();
         result &= self.0.get(&Colors::Red).unwrap() >= other.0.get(&Colors::Red).unwrap();
         result &= self.0.get(&Colors::Green).unwrap() >= other.0.get(&Colors::Green).unwrap();
@@ -128,18 +127,13 @@ fn example_2(s: &str) -> u32 {
             let mut chars = s.chars();
             let game_id = parse_game_id(&mut chars);
             let mut current_lowest_config = Config::default();
-            println!("=========");
-            println!("my game id {game_id}");
             loop {
                 let (cont, next_set) = parse_next_set(&mut chars);
-                println!("I drew set {:?}", next_set);
                 current_lowest_config.set_lowest_config(next_set);
                 if !cont {
                     break;
                 }
             }
-            println!("lowest possibility :) {current_lowest_config:?}");
-            println!("=========");
             current_lowest_config.power_set()
         })
         .sum()
@@ -151,20 +145,15 @@ fn example_1(s: &str, config: Config) -> u32 {
         .map(|s| {
             let mut chars = s.chars();
             let game_id = parse_game_id(&mut chars);
-            println!("=========");
-            println!("my game id {game_id}");
             loop {
                 let (cont, next_set) = parse_next_set(&mut chars);
                 if !config.check(next_set) {
-                    println!("Doesn't work :(");
-                    println!("=========");
                     return 0;
                 }
                 if !cont {
                     break;
                 }
             }
-            println!("=========");
             game_id
         })
         .sum()
