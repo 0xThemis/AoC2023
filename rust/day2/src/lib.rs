@@ -122,10 +122,9 @@ fn parse_next_set(char_iter: &mut Chars) -> (bool, Config) {
 
 fn example_2(s: &str) -> u32 {
     s.lines()
-        .map(|s| &s.trim()["Game ".len()..])
+        .map(|s| &s[s.find(':').unwrap() + 1..])
         .map(|s| {
-            let mut chars = s.chars();
-            let _ = parse_game_id(&mut chars);
+            let mut chars = s.trim().chars();
             let mut current_lowest_config = Config::default();
             loop {
                 let (cont, next_set) = parse_next_set(&mut chars);
