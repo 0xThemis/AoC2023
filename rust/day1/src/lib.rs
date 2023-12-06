@@ -27,7 +27,6 @@ fn parse_number_2(s: &str) -> u128 {
         .chars()
         .filter(|c| c.is_ascii_digit())
         .collect::<String>();
-    println!("transformed {s} into {asciis}");
     let mut result_string = String::new();
     result_string.push(asciis.chars().next().unwrap());
     result_string.push(asciis.chars().next_back().unwrap());
