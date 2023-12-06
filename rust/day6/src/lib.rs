@@ -13,7 +13,7 @@ pub struct InputDay6 {
     challenge_2: BoatRace,
 }
 
-fn day6_challenge1(input: &InputDay6) -> u128 {
+fn day6_challenge1(input: &InputDay6) -> u32 {
     input
         .challenge_1
         .iter()
@@ -21,16 +21,16 @@ fn day6_challenge1(input: &InputDay6) -> u128 {
             (1..race.time)
                 .map(|press| ((press) * (race.time - press)))
                 .filter(|distance| distance > &race.distance)
-                .count() as u128
+                .count() as u32
         })
         .product()
 }
-fn day6_challenge2(input: &InputDay6) -> u128 {
+fn day6_challenge2(input: &InputDay6) -> u32 {
     let race = &input.challenge_2;
     (1..race.time)
         .map(|press| ((press) * (race.time - press)))
         .filter(|distance| distance > &race.distance)
-        .count() as u128
+        .count() as u32
 }
 
 impl From<(u64, u64)> for BoatRace {
@@ -44,9 +44,9 @@ pub struct Day6Solver;
 impl<'a> AdventOfCodeDay<'a> for Day6Solver {
     type ParsedInput = InputDay6;
 
-    type Part1Output = u128;
+    type Part1Output = u32;
 
-    type Part2Output = u128;
+    type Part2Output = u32;
 
     fn solve_part1(input: &Self::ParsedInput) -> Self::Part1Output {
         day6_challenge1(input)

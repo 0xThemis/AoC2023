@@ -21,7 +21,7 @@ impl Default for Config {
     }
 }
 impl Config {
-    fn new(red: u32, blue: u32, green: u32) -> Self {
+    fn new(red: u32, green: u32, blue: u32) -> Self {
         let mut map = HashMap::new();
         map.insert(Colors::Blue, blue);
         map.insert(Colors::Red, red);
@@ -125,7 +125,7 @@ fn example_2(s: &str) -> u32 {
         .map(|s| &s.trim()["Game ".len()..])
         .map(|s| {
             let mut chars = s.chars();
-            let game_id = parse_game_id(&mut chars);
+            let _ = parse_game_id(&mut chars);
             let mut current_lowest_config = Config::default();
             loop {
                 let (cont, next_set) = parse_next_set(&mut chars);
@@ -189,7 +189,7 @@ fn test_example_1() {
     Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red
     Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
     //example_1(input, Config::new(12, 12, 12));
-    assert_eq!(example_1(input, Config::new(12, 12, 12)), 8);
+    assert_eq!(example_1(input, Config::new(12, 13, 14)), 8);
 }
 
 #[test]
@@ -305,6 +305,6 @@ fn my_example_1() {
     Game 98: 3 green, 4 blue, 7 red; 7 red, 8 green; 7 green, 16 red, 1 blue; 8 green, 2 blue, 4 red; 5 green, 3 blue, 18 red
     Game 99: 6 green, 12 red, 1 blue; 5 blue, 1 red, 7 green; 5 green, 7 red, 10 blue; 8 blue, 1 red, 7 green; 17 red, 4 blue, 9 green
     Game 100: 6 blue, 10 green; 3 green, 4 blue, 1 red; 7 blue, 1 red, 12 green";
-    println!("{}", example_1(input, Config::new(14, 12, 13)));
-    println!("{}", example_2(input));
+    assert_eq!(2348, example_1(input, Config::new(12, 13, 14)));
+    assert_eq!(76008, example_2(input))
 }
