@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 aoc-traits = { workspace = true }
+num = "0.4.1"

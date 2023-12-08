@@ -4,13 +4,6 @@ use aoc_traits::AdventOfCodeDay;
 
 type ChildNode = Rc<RefCell<Node>>;
 #[derive(Debug)]
-pub enum NodeType {
-    Start,
-    End,
-    FirstEnd,
-    Normal,
-}
-#[derive(Debug)]
 pub enum Direction {
     Left,
     Right,
@@ -24,25 +17,9 @@ pub struct Map {
 
 #[derive(Debug)]
 pub struct Node {
-    ty: NodeType,
+    name: String,
     left: Option<ChildNode>,
     right: Option<ChildNode>,
-}
-
-impl FromStr for NodeType {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(if s == "ZZZ" {
-            NodeType::FirstEnd
-        } else {
-            match s.chars().next_back().unwrap() {
-                'A' => NodeType::Start,
-                'Z' => NodeType::End,
-                _ => NodeType::Normal,
-            }
-        })
-    }
 }
 
 impl FromStr for Node {
@@ -50,7 +27,7 @@ impl FromStr for Node {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            ty: s.parse().unwrap(),
+            name: s.to_owned(),
             left: None,
             right: None,
         })
@@ -72,44 +49,35 @@ fn insert_node(key: String, map: &mut HashMap<String, ChildNode>) -> ChildNode {
         .or_insert(Rc::new(RefCell::new(key.parse().unwrap())))
         .clone()
 }
-fn solve_part1(map: &Map) -> usize {
+
+fn solve_single_node(map: &Map, start_node: ChildNode, end_string: &str) -> usize {
     let mut counter = 0;
     let directions = map.directions.len();
-    let mut current_node = map.aaa.clone().unwrap();
+    let mut current_node = start_node;
     loop {
         current_node = match map.directions.get(counter % directions).unwrap() {
             Direction::Left => current_node.borrow().left.clone().unwrap(),
             Direction::Right => current_node.borrow().right.clone().unwrap(),
         };
         counter += 1;
-        if matches!(current_node.borrow().ty, NodeType::FirstEnd) {
+        if current_node.borrow().name.ends_with(end_string) {
             break;
         }
     }
     counter
 }
 
+fn solve_part1(map: &Map) -> usize {
+    solve_single_node(map, map.aaa.clone().unwrap(), "ZZZ")
+}
+
 fn solve_part2(map: &Map) -> usize {
-    let mut counter = 0;
-    let directions = map.directions.len();
-    let mut current_nodes = map.start_nodes.clone();
-    println!("start nodes: {:?}", current_nodes);
-    loop {
-        current_nodes.iter_mut().for_each(|node| {
-            *node = match map.directions.get(counter % directions).unwrap() {
-                Direction::Left => node.borrow().left.clone().unwrap(),
-                Direction::Right => node.borrow().right.clone().unwrap(),
-            };
-        });
-        counter += 1;
-        let done = current_nodes
-            .iter()
-            .all(|node| matches!(node.borrow().ty, NodeType::End));
-        if done {
-            break;
-        }
-    }
-    counter
+    map.start_nodes
+        .clone()
+        .into_iter()
+        .map(|x| solve_single_node(map, x, "Z"))
+        .reduce(num::integer::lcm)
+        .unwrap()
 }
 
 impl FromStr for Map {
@@ -135,7 +103,7 @@ impl FromStr for Map {
             let current_node = insert_node(current_node.to_owned(), &mut nodes);
             current_node.borrow_mut().left = Some(left_node);
             current_node.borrow_mut().right = Some(right_node);
-            if matches!(current_node.borrow().ty, NodeType::Start) {
+            if current_node.borrow().name.ends_with('A') {
                 start_nodes.push(current_node.clone());
             }
         }
@@ -161,8 +129,7 @@ impl<'a> AdventOfCodeDay<'a> for Day8Solver {
     }
 
     fn solve_part2(input: &Self::ParsedInput) -> Self::Part2Output {
-        //solve_part2(input)
-        1
+        solve_part2(input)
     }
 
     fn parse_input(input: &'a str) -> Self::ParsedInput {
@@ -205,6 +172,6 @@ mod tests {
         let input = std::fs::read_to_string("challenge.txt").unwrap();
         let map = input.parse::<Map>().unwrap();
         assert_eq!(12169, solve_part1(&map));
-        assert_eq!(12169, solve_part2(&map));
+        assert_eq!(12030780859469, solve_part2(&map));
     }
 }
