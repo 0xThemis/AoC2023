@@ -56,16 +56,10 @@ fn solve_part1(map: &Map) -> usize {
     let mut current_node = map.aaa.clone();
     loop {
         let current_direction = map.directions.get(counter % directions).unwrap();
-        print!(
-            "going from {:?} to {:?}",
-            current_node.borrow().name,
-            current_direction
-        );
         current_node = match map.directions.get(counter % directions).unwrap() {
             Direction::Left => current_node.borrow().childs[0].clone(),
             Direction::Right => current_node.borrow().childs[1].clone(),
         };
-        println!(" {:?}", current_node.borrow().name);
         counter += 1;
         if current_node.borrow().name == "ZZZ" {
             break;
@@ -146,6 +140,6 @@ mod tests {
     fn challenge_1() {
         let input = std::fs::read_to_string("challenge.txt").unwrap();
         let map = input.parse::<Map>().unwrap();
-        assert_eq!(6, solve_part1(&map));
+        assert_eq!(12169, solve_part1(&map));
     }
 }
