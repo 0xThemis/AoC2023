@@ -1,14 +1,8 @@
-use std::{
-    cell::RefCell,
-    collections::{hash_map, HashMap},
-    default,
-    rc::Rc,
-    str::FromStr,
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, str::FromStr};
 
 use aoc_traits::AdventOfCodeDay;
 
-type ChildNode = RefCell<Rc<Node>>;
+type ChildNode = Rc<RefCell<Node>>;
 #[derive(Debug)]
 pub enum Direction {
     Left,
@@ -17,20 +11,22 @@ pub enum Direction {
 
 pub struct Map {
     directions: Vec<Direction>,
-    aaa: Rc<RefCell<Node>>,
+    aaa: ChildNode,
 }
 
 #[derive(Debug)]
 pub struct Node {
     name: String,
-    childs: Vec<Rc<RefCell<Node>>>,
+    left: Option<ChildNode>,
+    right: Option<ChildNode>,
 }
 
 impl From<String> for Node {
     fn from(name: String) -> Self {
         Self {
             name,
-            childs: vec![],
+            left: None,
+            right: None,
         }
     }
 }
@@ -45,7 +41,7 @@ impl From<char> for Direction {
     }
 }
 
-fn insert_node(key: String, map: &mut HashMap<String, Rc<RefCell<Node>>>) -> Rc<RefCell<Node>> {
+fn insert_node(key: String, map: &mut HashMap<String, ChildNode>) -> ChildNode {
     map.entry(key.clone())
         .or_insert(Rc::new(RefCell::new(Node::from(key))))
         .clone()
@@ -55,10 +51,9 @@ fn solve_part1(map: &Map) -> usize {
     let directions = map.directions.len();
     let mut current_node = map.aaa.clone();
     loop {
-        let current_direction = map.directions.get(counter % directions).unwrap();
         current_node = match map.directions.get(counter % directions).unwrap() {
-            Direction::Left => current_node.borrow().childs[0].clone(),
-            Direction::Right => current_node.borrow().childs[1].clone(),
+            Direction::Left => current_node.borrow().left.clone().unwrap(),
+            Direction::Right => current_node.borrow().right.clone().unwrap(),
         };
         counter += 1;
         if current_node.borrow().name == "ZZZ" {
@@ -88,9 +83,8 @@ impl FromStr for Map {
             let left_node = insert_node(split.next().unwrap()[1..4].to_owned(), &mut nodes);
             let right_node = insert_node(split.next().unwrap()[0..3].to_owned(), &mut nodes);
             let current_node = insert_node(current_node.to_owned(), &mut nodes);
-            assert!(current_node.borrow().childs.is_empty());
-            current_node.borrow_mut().childs.push(left_node);
-            current_node.borrow_mut().childs.push(right_node);
+            current_node.borrow_mut().left = Some(left_node);
+            current_node.borrow_mut().right = Some(right_node);
         }
         Ok(Self {
             directions,
