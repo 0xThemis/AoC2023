@@ -1,10 +1,11 @@
-use std::{cmp::Ordering, str::FromStr};
+use std::{cmp::Ordering, collections::HashMap, str::FromStr};
 
 use aoc_traits::AdventOfCodeDay;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum Card {
     Empty,
+    Joker,
     One,
     Two,
     Three,
@@ -21,44 +22,21 @@ pub enum Card {
     Ace,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct UnorderedCard {
-    card: Card,
-}
-
-impl PartialEq for UnorderedCard {
-    fn eq(&self, other: &Self) -> bool {
-        true
-    }
-}
-
-impl PartialOrd for UnorderedCard {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        None
-    }
-}
-
-impl From<Card> for UnorderedCard {
-    fn from(card: Card) -> Self {
-        Self { card }
-    }
-}
-
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Value {
     Empty,
-    HighCard(UnorderedCard),
-    OnePair(UnorderedCard),
-    TwoPair(UnorderedCard, UnorderedCard),
-    ThreeOfAKind(UnorderedCard),
-    FullHouse(UnorderedCard, UnorderedCard),
-    FourOfAKind(UnorderedCard),
-    FiveOfAKind(UnorderedCard),
+    HighCard,
+    OnePair,
+    TwoPair,
+    ThreeOfAKind,
+    FullHouse,
+    FourOfAKind,
+    FiveOfAKind,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Draw {
-    hand: [Card; 5],
+    hand: Vec<Card>,
     value: Value,
     bid: u64,
 }
@@ -70,32 +48,40 @@ pub struct Game {
 
 impl Draw {
     fn better_than(&self, other: &Draw) -> Ordering {
-        println!();
-        println!();
-        println!("=================");
-        println!("comparing {self:?}");
-        println!("with      {other:?}");
         if self.value == other.value {
-            //check which has higher first card
             self.hand
                 .iter()
                 .zip(other.hand.iter())
-                .find_map(|(a, b)| {
-                    if a == b {
-                        None
-                    } else if a < b {
-                        Some(Ordering::Less)
-                    } else {
-                        Some(Ordering::Greater)
-                    }
+                .find_map(|(a, b)| match a.cmp(b) {
+                    Ordering::Less => Some(Ordering::Less),
+                    Ordering::Greater => Some(Ordering::Greater),
+                    Ordering::Equal => None,
                 })
                 .unwrap()
         } else if self.value > other.value {
-            println!("is greater!");
             Ordering::Greater
         } else {
-            println!("is less!");
             Ordering::Less
+        }
+    }
+}
+impl From<&[Card]> for Value {
+    fn from(value: &[Card]) -> Self {
+        let mut map = HashMap::new();
+        value.iter().for_each(|c| {
+            let entry = map.entry(c).or_insert(0);
+            *entry += 1;
+        });
+        let mut values = map.values().cloned().collect::<Vec<_>>();
+        values.sort();
+        match values.as_slice() {
+            [5] => Value::FiveOfAKind,
+            [1, 4] => Value::FourOfAKind,
+            [2, 3] => Value::FullHouse,
+            [1, 2, 2] => Value::TwoPair,
+            [1, 1, 3] => Value::ThreeOfAKind,
+            [1, 1, 1, 2] => Value::OnePair,
+            _ => Value::HighCard,
         }
     }
 }
@@ -123,61 +109,42 @@ impl From<char> for Card {
 }
 
 impl Value {
-    fn add_card(self, card: Card, hand: &[Card]) -> Self {
+    fn use_joker(self, hand: &[Card]) -> Self {
+        let amount_jokers = hand.iter().filter(|card| card == &&Card::Jack).count();
         match self {
-            Value::FourOfAKind(hold_card) => {
-                if hold_card.card == card {
-                    Value::FiveOfAKind(hold_card)
-                } else {
-                    self
-                }
-            }
-            Value::ThreeOfAKind(hold_card) => {
-                if hold_card.card == card {
-                    Value::FourOfAKind(hold_card)
-                } else if hand.contains(&card) {
-                    if card > hold_card.card {
-                        Value::FullHouse(UnorderedCard::from(card), hold_card)
-                    } else {
-                        Value::FullHouse(hold_card, UnorderedCard::from(card))
-                    }
-                } else {
-                    self
-                }
-            }
-            Value::TwoPair(pair1, pair2) => {
-                if card == pair1.card {
-                    Value::FullHouse(pair1, pair2)
-                } else if card == pair2.card {
-                    Value::FullHouse(pair2, pair1)
-                } else {
-                    self
-                }
-            }
-            Value::OnePair(hold_card) => {
-                if card == hold_card.card {
-                    Value::ThreeOfAKind(UnorderedCard::from(card))
-                } else if hand.contains(&card) {
-                    if card > hold_card.card {
-                        Value::TwoPair(UnorderedCard::from(card), hold_card)
-                    } else {
-                        Value::TwoPair(hold_card, UnorderedCard::from(card))
-                    }
-                } else {
-                    self
-                }
-            }
-            Value::HighCard(hold_card) => {
-                if hand.contains(&card) {
-                    Value::OnePair(UnorderedCard::from(card))
-                } else if card > hold_card.card {
-                    Value::HighCard(UnorderedCard::from(card))
-                } else {
-                    self
-                }
-            }
-            Value::Empty => Value::HighCard(UnorderedCard::from(card)),
-            _ => unreachable!(),
+            Value::FourOfAKind => match amount_jokers {
+                0 => self,
+                1 | 4 => Value::FiveOfAKind,
+                _ => unreachable!(),
+            },
+            Value::FullHouse => match amount_jokers {
+                0 => self,
+                2 | 3 => Value::FiveOfAKind,
+                _ => unreachable!(),
+            },
+
+            Value::ThreeOfAKind => match amount_jokers {
+                0 => self,
+                1 | 3 => Value::FourOfAKind,
+                _ => unreachable!(),
+            },
+            Value::TwoPair => match amount_jokers {
+                0 => self,
+                1 => Value::FullHouse,
+                2 => Value::FourOfAKind,
+                _ => unreachable!(),
+            },
+            Value::OnePair => match amount_jokers {
+                0 => self,
+                1 | 2 => Value::ThreeOfAKind,
+                _ => unreachable!(),
+            },
+            Value::HighCard => match amount_jokers {
+                0 => self,
+                1 => Value::OnePair,
+                _ => unreachable!(),
+            },
+            _ => Value::FiveOfAKind,
         }
     }
 }
@@ -187,23 +154,15 @@ impl FromStr for Draw {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut split = s.split_ascii_whitespace();
-        let cards = split.next().unwrap();
-        let mut value = Value::Empty;
-        let mut draw = [Card::Empty; 5];
-        for (idx, char) in cards.chars().enumerate() {
-            let card = Card::from(char);
-            println!("===============");
-            println!("adding {card:?}");
-            println!("transitioning from {value:?}");
-            value = value.add_card(card, &draw);
-            println!("transitioning to {value:?}");
-            draw[idx] = card;
-        }
-        println!();
-        println!();
+        let hand = split
+            .next()
+            .unwrap()
+            .chars()
+            .map(Card::from)
+            .collect::<Vec<_>>();
         Ok(Self {
-            hand: draw,
-            value,
+            value: Value::from(hand.as_slice()),
+            hand,
             bid: split.next().unwrap().parse().unwrap(),
         })
     }
@@ -219,25 +178,32 @@ impl FromStr for Game {
     }
 }
 
-fn solve_part1(draw: &mut Game) -> u64 {
-    draw.players.sort_by(|a, b| a.better_than(b));
-    for (idx, test) in draw.players.iter().enumerate() {
-        println!(
-            "draw: {:?} {:?} has rank {} {}",
-            test.value,
-            test.hand,
-            idx + 1,
-            test.bid
-        );
-    }
-    draw.players
+fn solve_part1(game: &Game) -> u64 {
+    let mut players = game.players.to_vec();
+    players.sort_by(|a, b| a.better_than(b));
+    players
         .iter()
         .enumerate()
-        .map(|(idx, player)| {
-            let won = player.bid as usize * (idx + 1);
-            //println!("player {idx} won {won}");
-            won
-        })
+        .map(|(idx, player)| player.bid as usize * (idx + 1))
+        .sum::<usize>() as u64
+}
+
+fn solve_part2(game: &Game) -> u64 {
+    let mut players = game.players.to_vec();
+    players.iter_mut().for_each(|player| {
+        player.value = player.value.clone().use_joker(&player.hand);
+        for card in player.hand.iter_mut() {
+            if *card == Card::Jack {
+                *card = Card::Joker;
+            }
+        }
+    });
+
+    players.sort_by(|a, b| a.better_than(b));
+    players
+        .iter()
+        .enumerate()
+        .map(|(idx, player)| player.bid as usize * (idx + 1))
         .sum::<usize>() as u64
 }
 
@@ -251,16 +217,15 @@ impl<'a> AdventOfCodeDay<'a> for Day7Solver {
     type Part2Output = u64;
 
     fn solve_part1(input: &Self::ParsedInput) -> Self::Part1Output {
-        todo!()
-        //solve_part1(input)
+        solve_part1(input)
     }
 
     fn solve_part2(input: &Self::ParsedInput) -> Self::Part2Output {
-        todo!()
+        solve_part2(input)
     }
 
     fn parse_input(input: &'a str) -> Self::ParsedInput {
-        todo!()
+        input.parse().unwrap()
     }
 }
 
@@ -269,31 +234,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_bug() {
-        let input = "TATAT 765
-        QQQJJ 483
-        QQJJJ 278
-        QQ7JJ 21
-        JJ7QQ 21";
-        let mut game = input.parse::<Game>().unwrap();
-        solve_part1(&mut game);
-    }
-
-    #[test]
     fn example_1() {
         let input = "32T3K 765
         T55J5 684
         KK677 28
         KTJJT 220
         QQQJA 483";
-        let mut game = input.parse::<Game>().unwrap();
-        assert_eq!(6440, solve_part1(&mut game));
+        let game = input.parse::<Game>().unwrap();
+        assert_eq!(6440, solve_part1(&game));
+        assert_eq!(5905, solve_part2(&game));
     }
 
     #[test]
     fn challenge_1() {
         let input = std::fs::read_to_string("challenge1.txt").unwrap();
-        let mut game = input.parse::<Game>().unwrap();
-        assert_eq!(250347426, solve_part1(&mut game));
+        let game = input.parse::<Game>().unwrap();
+        assert_eq!(250347426, solve_part1(&game));
+        assert_eq!(251224870, solve_part2(&game));
     }
 }
