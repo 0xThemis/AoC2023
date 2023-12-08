@@ -4,6 +4,13 @@ use aoc_traits::AdventOfCodeDay;
 
 type ChildNode = Rc<RefCell<Node>>;
 #[derive(Debug)]
+pub enum NodeType {
+    Start,
+    End,
+    FirstEnd,
+    Normal,
+}
+#[derive(Debug)]
 pub enum Direction {
     Left,
     Right,
@@ -11,23 +18,42 @@ pub enum Direction {
 
 pub struct Map {
     directions: Vec<Direction>,
-    aaa: ChildNode,
+    start_nodes: Vec<ChildNode>,
+    aaa: Option<ChildNode>,
 }
 
 #[derive(Debug)]
 pub struct Node {
-    name: String,
+    ty: NodeType,
     left: Option<ChildNode>,
     right: Option<ChildNode>,
 }
 
-impl From<String> for Node {
-    fn from(name: String) -> Self {
-        Self {
-            name,
+impl FromStr for NodeType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(if s == "ZZZ" {
+            NodeType::FirstEnd
+        } else {
+            match s.chars().next_back().unwrap() {
+                'A' => NodeType::Start,
+                'Z' => NodeType::End,
+                _ => NodeType::Normal,
+            }
+        })
+    }
+}
+
+impl FromStr for Node {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            ty: s.parse().unwrap(),
             left: None,
             right: None,
-        }
+        })
     }
 }
 
@@ -43,20 +69,43 @@ impl From<char> for Direction {
 
 fn insert_node(key: String, map: &mut HashMap<String, ChildNode>) -> ChildNode {
     map.entry(key.clone())
-        .or_insert(Rc::new(RefCell::new(Node::from(key))))
+        .or_insert(Rc::new(RefCell::new(key.parse().unwrap())))
         .clone()
 }
 fn solve_part1(map: &Map) -> usize {
     let mut counter = 0;
     let directions = map.directions.len();
-    let mut current_node = map.aaa.clone();
+    let mut current_node = map.aaa.clone().unwrap();
     loop {
         current_node = match map.directions.get(counter % directions).unwrap() {
             Direction::Left => current_node.borrow().left.clone().unwrap(),
             Direction::Right => current_node.borrow().right.clone().unwrap(),
         };
         counter += 1;
-        if current_node.borrow().name == "ZZZ" {
+        if matches!(current_node.borrow().ty, NodeType::FirstEnd) {
+            break;
+        }
+    }
+    counter
+}
+
+fn solve_part2(map: &Map) -> usize {
+    let mut counter = 0;
+    let directions = map.directions.len();
+    let mut current_nodes = map.start_nodes.clone();
+    println!("start nodes: {:?}", current_nodes);
+    loop {
+        current_nodes.iter_mut().for_each(|node| {
+            *node = match map.directions.get(counter % directions).unwrap() {
+                Direction::Left => node.borrow().left.clone().unwrap(),
+                Direction::Right => node.borrow().right.clone().unwrap(),
+            };
+        });
+        counter += 1;
+        let done = current_nodes
+            .iter()
+            .all(|node| matches!(node.borrow().ty, NodeType::End));
+        if done {
             break;
         }
     }
@@ -76,6 +125,7 @@ impl FromStr for Map {
             .collect::<Vec<_>>();
         lines.next(); // skip new line
         let mut nodes = HashMap::new();
+        let mut start_nodes = vec![];
         for line in lines {
             let mut split = line.split('=');
             let current_node = split.next().unwrap().trim();
@@ -85,10 +135,14 @@ impl FromStr for Map {
             let current_node = insert_node(current_node.to_owned(), &mut nodes);
             current_node.borrow_mut().left = Some(left_node);
             current_node.borrow_mut().right = Some(right_node);
+            if matches!(current_node.borrow().ty, NodeType::Start) {
+                start_nodes.push(current_node.clone());
+            }
         }
         Ok(Self {
             directions,
-            aaa: nodes.get(&"AAA".to_owned()).unwrap().clone(),
+            start_nodes,
+            aaa: nodes.get("AAA").cloned(),
         })
     }
 }
@@ -131,9 +185,26 @@ mod tests {
     }
 
     #[test]
+    fn example_2() {
+        let input = "LR
+
+        11A = (11B, XXX)
+        11B = (XXX, 11Z)
+        11Z = (11B, XXX)
+        22A = (22B, XXX)
+        22B = (22C, 22C)
+        22C = (22Z, 22Z)
+        22Z = (22B, 22B)
+        XXX = (XXX, XXX)";
+        let map = input.parse::<Map>().unwrap();
+        assert_eq!(6, solve_part2(&map));
+    }
+
+    #[test]
     fn challenge_1() {
         let input = std::fs::read_to_string("challenge.txt").unwrap();
         let map = input.parse::<Map>().unwrap();
         assert_eq!(12169, solve_part1(&map));
+        assert_eq!(12169, solve_part2(&map));
     }
 }
