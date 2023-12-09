@@ -1,11 +1,11 @@
-use std::{cell::RefCell, str::FromStr};
+use std::str::FromStr;
 
 use aoc_traits::AdventOfCodeDay;
 
 #[derive(Debug)]
 pub struct Measuring {
-    values: Vec<Vec<i32>>,
-    second_solution: RefCell<i32>,
+    solution_1: i32,
+    solution_2: i32,
 }
 
 fn approximate(history: &[i32]) -> (i32, i32) {
@@ -39,31 +39,31 @@ fn approximate(history: &[i32]) -> (i32, i32) {
 }
 
 fn solve_part1(measuring: &Measuring) -> i32 {
-    let (first, second): (Vec<i32>, Vec<i32>) =
-        measuring.values.iter().map(|x| approximate(x)).unzip();
-    *measuring.second_solution.borrow_mut() = second.into_iter().sum::<i32>();
-    first.into_iter().sum()
+    measuring.solution_1
 }
 
 fn solve_part2(measuring: &Measuring) -> i32 {
-    *measuring.second_solution.borrow()
+    measuring.solution_2
 }
 
 impl FromStr for Measuring {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let measuring = s
+            .trim()
+            .lines()
+            .map(|s| {
+                s.split_ascii_whitespace()
+                    .map(|c| c.parse().unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        let (first, second): (Vec<i32>, Vec<i32>) =
+            measuring.iter().map(|x| approximate(x)).unzip();
         Ok(Self {
-            values: s
-                .trim()
-                .lines()
-                .map(|s| {
-                    s.split_ascii_whitespace()
-                        .map(|c| c.parse().unwrap())
-                        .collect::<Vec<_>>()
-                })
-                .collect::<Vec<_>>(),
-            second_solution: RefCell::new(0),
+            solution_1: first.into_iter().sum(),
+            solution_2: second.into_iter().sum::<i32>(),
         })
     }
 }
@@ -117,5 +117,13 @@ mod tests {
         let map = input.parse::<Measuring>().unwrap();
         assert_eq!(1647269739, solve_part1(&map));
         assert_eq!(864, solve_part2(&map));
+    }
+
+    #[test]
+    fn daniel() {
+        let input = std::fs::read_to_string("daniel.txt").unwrap();
+        let map = input.parse::<Measuring>().unwrap();
+        assert_eq!(1916822650, solve_part1(&map));
+        assert_eq!(966, solve_part2(&map));
     }
 }
