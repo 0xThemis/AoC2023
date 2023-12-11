@@ -285,6 +285,6 @@ mod tests {
         ";
         let observation = input.parse::<Observation>().unwrap();
         assert_eq!(9403026, solve_part1(&observation));
-        assert_eq!(9403026, solve_part2(&observation));
+        assert_eq!(543018317006, solve_part2(&observation));
     }
 }
