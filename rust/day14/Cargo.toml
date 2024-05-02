@@ -1,0 +1,9 @@
+[package]
+name = "day14"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+aoc-traits = { git = "https://github.com/dkales/adventofcode2023-leaderboard", rev = "ac544663758c2dca2ee892fd7ab59419999350dc" }
